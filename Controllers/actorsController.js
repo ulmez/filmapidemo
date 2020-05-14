@@ -1,24 +1,11 @@
+/* eslint-disable no-console */
 /* eslint-disable no-param-reassign */
-const sql = require('mssql');
-const config = require('../config');
-
-// const db = require('../db');
+const db = require('../db');
 
 const actorsController = () => {
   const get = async (req, res) => {
     try {
-      const query = req.params.Id > 0
-        ? `EXEC GetActor ${req.params.Id}`
-        : 'EXEC GetActors';
-
-      await sql.connect(config);
-      const result = await sql.query(query);
-
-      const records = result.recordset.map((record) => {
-        record.links = {};
-        record.links.self = `http://${req.headers.host}/api/actors/${record.Id}`;
-        return record;
-      });
+      const records = await db.get(req, res, 'actor');
 
       if (records.length === 0) {
         res.status(404);
@@ -27,11 +14,47 @@ const actorsController = () => {
 
       return res.json(records);
     } catch (err) {
+      console.log(err);
       return res.status(404);
     }
   };
 
-  return { get };
+  const post = async (req, res) => {
+    try {
+      return await db.modify(req, res, 'AddActor', 'FirstName', 'LastName');
+    } catch (err) {
+      console.log(err);
+      res.status(500);
+      return res.send('Unable to create.');
+    }
+  };
+
+  const put = async (req, res) => {
+    try {
+      return await db.modify(req, res, 'UpdateActor', 'FirstName', 'LastName');
+    } catch (err) {
+      console.log(err);
+      res.status(500);
+      return res.send('Unable to update.');
+    }
+  };
+
+  const remove = async (req, res) => {
+    try {
+      return await db.modify(req, res, 'DeleteActor');
+    } catch (err) {
+      console.log(err);
+      res.status(500);
+      return res.send('Unable to delete.');
+    }
+  };
+
+  return {
+    get,
+    post,
+    put,
+    remove,
+  };
 };
 
 module.exports = actorsController;
